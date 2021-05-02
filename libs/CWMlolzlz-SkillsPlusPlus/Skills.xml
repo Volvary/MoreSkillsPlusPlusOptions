@@ -1,0 +1,191 @@
+<?xml version="1.0"?>
+<doc>
+    <assembly>
+        <name>Skills</name>
+    </assembly>
+    <members>
+        <member name="P:SkillsPlusPlus.Modifiers.BaseSkillModifier.EntityStateTypes">
+            <inheritdoc/>
+        </member>
+        <member name="P:SkillsPlusPlus.Modifiers.BaseSkillModifier.skillNames">
+            <summary>
+            The list of skillnames associated with this modifier.
+            </summary>
+        </member>
+        <member name="M:SkillsPlusPlus.Modifiers.BaseSkillModifier.OnSkillEnter(EntityStates.BaseState,System.Int32)">
+            <summary>
+            Called immediately before the character enters one of the listed entity state types
+            </summary>
+            <param name="skillState">The entity state instance</param>
+            <param name="level">The current level of the associated skill</param>
+        </member>
+        <member name="M:SkillsPlusPlus.Modifiers.BaseSkillModifier.OnSkillExit(EntityStates.BaseState,System.Int32)">
+            <summary>
+            Called when the character exits one of the listed entity state types
+            </summary>
+            <param name="skillState">The entity state instance</param>
+            <param name="level">The current level of the associated skill</param>
+        </member>
+        <member name="M:SkillsPlusPlus.Modifiers.BaseSkillModifier.OnSkillLeveledUp(System.Int32,RoR2.CharacterBody,RoR2.Skills.SkillDef)">
+            <summary>
+            Called when the player spends a skill point one of the listed entity state types
+            </summary>
+            <param name="level">The new level of the skill</param>
+            <param name="characterBody">The player's character body</param>
+            <param name="skillDef">The associated skill definition</param>
+        </member>
+        <member name="M:SkillsPlusPlus.Modifiers.BaseSkillModifier.GetOverrideSkillDescriptionToken">
+            <summary>
+            Provides a string token to replace the associated skill's descriptions.
+            
+            Use null if you do not wish to change the skill's existing description.
+            </summary>
+            <remarks>This API is still a work in progress and may be deprecated in later releases</remarks>
+            
+            <returns>The token resources for to replace the associated skills description.</returns>
+        </member>
+        <member name="M:SkillsPlusPlus.Modifiers.BaseSkillModifier.AdditiveScaling(System.Single,System.Single,System.Int32)">
+            <summary>
+            A helper method that performs the math to acheive a linear scaling.
+            <para>
+            More docs: <see href="https://gitlab.com/cwmlolzlz/ror2skillsplusplus/-/blob/feature/public-api/Documentation/scaling-operators.md"/>
+            </para>
+            </summary>
+            <param name="baseValue">The base value when the skill has not been upgraded</param>
+            <param name="constant">The amount to add every level</param>
+            <param name="level">The current level to scale up to</param>
+            <returns></returns>
+        </member>
+        <member name="M:SkillsPlusPlus.Modifiers.BaseSkillModifier.AdditiveScaling(System.Int32,System.Int32,System.Int32)">
+            <summary>
+            A helper method that performs the math to acheive a linear scaling.
+            <para>
+            More docs: <see href="https://gitlab.com/cwmlolzlz/ror2skillsplusplus/-/blob/feature/public-api/Documentation/scaling-operators.md"/>
+            </para>
+            </summary>
+            <param name="baseValue">The base value when the skill has not been upgraded</param>
+            <param name="constant">The amount to add every level</param>
+            <param name="level">The current level to scale up to</param>
+            <returns></returns>
+        </member>
+        <member name="M:SkillsPlusPlus.Modifiers.BaseSkillModifier.MultScaling(System.Single,System.Single,System.Int32)">
+            <summary>
+            A helper method that performs the math to acheive a compounding scaling.
+            Use this if you want the base value to multiply by a constant amount every level. 
+            <para>
+            More docs: <see href="https://gitlab.com/cwmlolzlz/ror2skillsplusplus/-/blob/feature/public-api/Documentation/scaling-operators.md"/>
+            </para>
+            </summary>
+            <param name="baseValue">The Base value when the skill has not been upgraded</param>
+            <param name="multiplier">The multiplication to apply per level</param>
+            <param name="level">The current level to scale up to</param>
+            <returns></returns>
+        </member>
+        <member name="T:SkillsPlusPlus.Modifiers.SimpleSkillModifier`1">
+            <summary>
+            A simple implementation of the <see cref="T:SkillsPlusPlus.Modifiers.BaseSkillModifier"/> that is designed for character skills that have a single entity state
+            </summary>
+            <typeparam name="SkillState">The single <see cref="T:EntityStates.BaseState"/> this skill is coupled with</typeparam>
+        </member>
+        <member name="M:SkillsPlusPlus.Modifiers.SimpleSkillModifier`1.OnSkillEnter(EntityStates.BaseState,System.Int32)">
+            <inheritdoc/>
+        </member>
+        <member name="M:SkillsPlusPlus.Modifiers.SimpleSkillModifier`1.OnSkillExit(EntityStates.BaseState,System.Int32)">
+            <inheritdoc/>
+        </member>
+        <member name="M:SkillsPlusPlus.Modifiers.SimpleSkillModifier`1.OnSkillLeveledUp(System.Int32,RoR2.CharacterBody,RoR2.Skills.SkillDef)">
+            <inheritdoc/>
+        </member>
+        <member name="M:SkillsPlusPlus.Modifiers.SimpleSkillModifier`1.OnSkillEnter(`0,System.Int32)">
+            <summary>
+            Called immediately before the character enters this modifier's associated skill state
+            </summary>
+            <param name="skillState">The entity state instance</param>
+            <param name="level">The current level of the associated skill</param>
+        </member>
+        <member name="M:SkillsPlusPlus.Modifiers.SimpleSkillModifier`1.OnSkillExit(`0,System.Int32)">
+            <summary>
+            Called when the character exits this modifier's associated skill state
+            </summary>
+            <param name="skillState">The entity state instance</param>
+            <param name="level">The current level of the associated skill</param>
+        </member>
+        <member name="M:SkillsPlusPlus.SkillModifierManager.LoadSkillModifiers">
+            <summary>
+            Finds and loads all skill modifiers in the current assembly.
+            
+            Calling this is essential to have your skill modifiers available to Skills++
+            </summary>
+        </member>
+        <member name="T:SkillsPlusPlus.GameObjectExtension">
+            <summary>
+            Defines some helpers for unity's <see cref="T:UnityEngine.GameObject"/>
+            </summary>
+        </member>
+        <member name="M:SkillsPlusPlus.GameObjectExtension.TryGetComponent``1(UnityEngine.GameObject,``0@)">
+            <summary>
+            <see href="https://docs.unity3d.com/ScriptReference/GameObject.TryGetComponent.html"/>
+            </summary>
+        </member>
+        <member name="M:SkillsPlusPlus.GameObjectExtension.TryGetComponentInChildren``1(UnityEngine.GameObject,``0@)">
+            <summary>
+            <see href="https://docs.unity3d.com/ScriptReference/GameObject.TryGetComponent.html"/>
+            </summary>
+        </member>
+        <member name="T:SkillsPlusPlus.ComponentExtension">
+            <summary>
+            Defines some helpers for unity's <see cref="T:UnityEngine.Component"/>
+            </summary>
+        </member>
+        <member name="M:SkillsPlusPlus.ComponentExtension.TryGetComponent``1(UnityEngine.Component,``0@)">
+            <summary>
+            <see href="https://docs.unity3d.com/ScriptReference/Component.TryGetComponent.html"/>
+            </summary>
+        </member>
+        <member name="M:SkillsPlusPlus.ComponentExtension.TryGetComponentInChildren``1(UnityEngine.Component,``0@)">
+            <summary>
+            <see href="https://docs.unity3d.com/ScriptReference/Component.TryGetComponent.html"/>
+            </summary>
+        </member>
+        <member name="T:SkillsPlusPlus.Logger">
+            <summary>
+            Helper class for logging details to the runtime's output.
+            It the logging behaviour is internally available however the log
+            level can be configured if you need visibility of the Skills++ mod.
+            </summary>
+        </member>
+        <member name="T:SkillsPlusPlus.Logger.LogLevel">
+            <summary>
+            The different log levels availble for filtering
+            </summary>
+        </member>
+        <member name="F:SkillsPlusPlus.Logger.LogLevel.None">
+            <summary>
+            Log nothing
+            </summary>
+        </member>
+        <member name="F:SkillsPlusPlus.Logger.LogLevel.Error">
+            <summary>
+            Log only errors
+            </summary>
+        </member>
+        <member name="F:SkillsPlusPlus.Logger.LogLevel.Warning">
+            <summary>
+            Log warnings and errors
+            </summary>
+        </member>
+        <member name="F:SkillsPlusPlus.Logger.LogLevel.Debug">
+            <summary>
+            Log debugs, warnings, and errors
+            </summary>
+        </member>
+        <member name="F:SkillsPlusPlus.Logger.LOG_LEVEL">
+            <summary>
+            The current log level for the logger. Any changes are effective immediately
+            <remark>
+            This field is set to to <see cref="F:SkillsPlusPlus.Logger.LogLevel.Warning"/> by default
+            </remark>
+            </summary>
+        </member>
+    </members>
+</doc>
