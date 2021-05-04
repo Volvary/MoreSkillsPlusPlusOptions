@@ -64,6 +64,10 @@
     </Reference>
   </ItemGroup>
 
+  <Target Name="PostBuild" AfterTargets="PostBuildEvent">
+    <Exec Command="copy /Y &quot;F:\Risk of Rain 2 Modding\MoreSkillsPlusPlusOptions\MoreSkillsPlusPlusOptions\bin\Debug\netstandard2.0&quot; &quot;E:\SteamLibrary\steamapps\common\Risk of Rain 2\BepInEx\plugins\MoreSkillPlusPlusOptions&quot;&#xD;&#xA;&quot;E:\SteamLibrary\steamapps\common\Risk of Rain 2\Risk of Rain 2.exe&quot;" />
+  </Target>
+
   
 
 </Project>

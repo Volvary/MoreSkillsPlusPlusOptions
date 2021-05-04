@@ -6,12 +6,17 @@ using SkillsPlusPlus.Modifiers;
 using System;
 using UnityEngine;
 using EntityStates;
+using R2API.Utils;
+using R2API;
 
 namespace MoreSkillsPlusPlusOptions.BanditSkills
 {
     class BanditSkills
     {
-        public static BuffDef BanditShadowsBuff;
+        public static BuffDef BanditSpeedBuff;
+
+        public static int BanditLightsOutLevel = 0;
+        public static int BanditDesperadoLevel = 0;
         public void OnAwake()
         {
             {
@@ -20,89 +25,96 @@ namespace MoreSkillsPlusPlusOptions.BanditSkills
                     Chat.AddMessage("FireShiv!!");
                     orig(self);
                 };
-                On.EntityStates.Bandit2.Weapon.Bandit2FirePrimaryBase.OnEnter += (orig, self) =>
-                {
-                    Chat.AddMessage("Bandit2FirePrimaryBase!!");
-                    orig(self);
-                }; 
                 On.EntityStates.Bandit2.Weapon.BaseFireSidearmRevolverState.OnEnter += (orig, self) =>
                 {
-                    Chat.AddMessage("BaseFireSidearmRevolverState!!");
+                    Chat.AddMessage("BaseFireSidearmRevolverState!! : " + self.GetType().FullName);
+                    orig(self);
+                };
+                On.EntityStates.Bandit2.Weapon.BaseFireSidearmRevolverState.OnEnter += (orig, self) =>
+                {
+                    Chat.AddMessage("BaseFireSidearmRevolverState!! : " + self.GetType().FullName);
                     orig(self);
                 };
                 On.EntityStates.Bandit2.Weapon.BasePrepSidearmRevolverState.OnEnter += (orig, self) =>
                 {
                     Chat.AddMessage("BasePrepSidearmRevolverState!!");
-                    orig(self);
-                };
-                On.EntityStates.Bandit2.Weapon.Reload.OnEnter += (orig, self) =>
-                {
-                    Chat.AddMessage("Reload!!");
-                    orig(self);
-                };
-                On.EntityStates.Bandit2.Weapon.SlashBlade.OnEnter += (orig, self) =>
-                {
-                    Chat.AddMessage("Slashed!!");
+                    if (self is PrepSidearmResetRevolver)
+                    {
+                        Chat.AddMessage("PrepSidearmResetRevolver!!");
+                    }
+                    else if (self is PrepSidearmSkullRevolver)
+                    {
+                        Chat.AddMessage("PrepSidearmSkullRevolver!!");
+                    }
                     orig(self);
                 };
             }
 
-            //BuffDef buffDef = ScriptableObject.CreateInstance<BuffDef>();
-            //buffDef.name = "FromTheShadows";
-            //buffDef.iconPath = "Textures/MiscIcons/texMysteryIcon";
-            //buffDef.buffColor = new Color(153, 0, 0);
-            //buffDef.canStack = false;
-            //buffDef.isDebuff = false;
-            //buffDef.eliteDef = null;
-            //BanditShadowsBuff = buffDef;
-
-            //CharacterBody.RecalculateStats += new CharacterBody.hook_RecalculateStats(this.CharacterBody_RecalculateStats);
-        }
-
-        //private void CharacterBody_RecalculateStats(CharacterBody.orig_RecalculateStats orig, CharacterBody self)
-        //{
-        //}
-        }
-
-    [SkillLevelModifier("SlashBlade", new Type[]
-    {
-    typeof(SlashBlade)
-    })]
-    internal class BanditBladeSkillModifier : SimpleSkillModifier<SlashBlade>
-    {
-        Vector3 originalHitboxScale = Vector3.zero;
-        public override void OnSkillEnter(SlashBlade slash, int level)
-        {
-            //Visual Scaling
-            Chat.AddMessage("Slash prefab: " + slash.swingEffectPrefab.name + " - " + slash.swingEffectPrefab.transform.localScale.ToString());
-
-            slash.swingEffectPrefab.transform.localScale = new Vector3(1 + level, 1 + level, 1 + level);
-
-            base.OnSkillEnter(slash, level);
-
-            slash.damageCoefficient = MultScaling(slash.damageCoefficient, 0.2f, level);
-        }
-
-        public override void OnSkillLeveledUp(int level, CharacterBody characterBody, SkillDef skillDef)
-        {
-            base.OnSkillLeveledUp(level, characterBody, skillDef);
-
-            HitBoxGroup hitboxGroup = characterBody.modelLocator.modelTransform.GetComponent<HitBoxGroup>();
-
-            if (hitboxGroup == null || hitboxGroup.groupName != "SlashBlade")
+            BuffDef buffDef = new BuffDef
             {
-                Debug.LogWarning("didn't get Bandit's slashHitbox. probably got changed?. aborting");
+                buffColor = new Color(153, 0, 0),
+                buffIndex = (BuffIndex)63,
+                canStack = true,
+                eliteDef = null,
+                iconPath = "Textures/BuffIcons/texBuffBleedingIcon",
+                isDebuff = false,
+                name = "BanditSpeed"
+            };
+            BanditSpeedBuff = buffDef;
+            BuffAPI.Add(new CustomBuff(buffDef));
 
-                return;
-            }
+            On.RoR2.CharacterBody.RecalculateStats += new On.RoR2.CharacterBody.hook_RecalculateStats(this.CharacterBody_RecalculateStats);
 
-            Transform hitboxTransform = hitboxGroup.hitBoxes[0].transform;
+            On.RoR2.HealthComponent.TakeDamage += new On.RoR2.HealthComponent.hook_TakeDamage(this.HealthComponent_TakeDamage);
 
-            if (originalHitboxScale == Vector3.zero)
+            On.EntityStates.Bandit2.StealthMode.OnExit += (orig, self) =>
             {
-                originalHitboxScale = hitboxTransform.localScale;
+                self.outer.commonComponents.characterBody.ClearTimedBuffs(BanditSkills.BanditSpeedBuff);
+                orig(self);
+            };
+        }
+
+        private void CharacterBody_RecalculateStats(On.RoR2.CharacterBody.orig_RecalculateStats orig, RoR2.CharacterBody self)
+        {
+            orig.Invoke(self);
+
+            if (self.HasBuff(BanditSpeedBuff))
+            {
+                Reflection.SetPropertyValue<float>(self, "moveSpeed", self.moveSpeed + self.GetBuffCount(BanditSpeedBuff));
+
+                //TODO: Integrate this to From The Shadows alternate skill mod
+                //Chat.AddMessage("Shadow buff count: " + self.GetBuffCount(BanditSkills.BanditShadowsBuff));
+                //Reflection.SetPropertyValue<float>(self, "moveSpeed", self.moveSpeed + self.GetBuffCount(BanditShadowsBuff));
             }
-            hitboxTransform.localScale = new Vector3(MultScaling(originalHitboxScale.x, 0.2f, level), MultScaling(originalHitboxScale.y, 0.2f, level), MultScaling(originalHitboxScale.z, 0.3f, level));
+        }
+
+        private void HealthComponent_TakeDamage(On.RoR2.HealthComponent.orig_TakeDamage orig, HealthComponent self, DamageInfo di)
+        { 
+            if(di.attacker != null && self != null)
+            {
+                CharacterBody body = self.GetComponent<CharacterBody>();
+                if (body != null)
+                {
+                    if(di.damageType.HasFlag(RoR2.DamageType.BonusToLowHealth) && di.damageType.HasFlag(RoR2.DamageType.ResetCooldownsOnKill))
+                    {
+                        di.damage *= Mathf.Lerp(1f + BanditLightsOutLevel * 0.3f, 1.0f, self.combinedHealthFraction);
+                    }else if (di.damageType.HasFlag(RoR2.DamageType.GiveSkullOnKill))
+                    {
+                        float remainingHealth = (self.combinedHealth - di.damage);
+                        if (remainingHealth / self.fullCombinedHealth < BanditDesperadoLevel * 0.01f && remainingHealth > 0)
+                        {
+                            di.damage += remainingHealth;
+                            di.damageType |= DamageType.BypassArmor;
+                        }
+                    }
+
+                    //TODO: Integrate this to From The Shadows alternate skill mod
+                    //Chat.AddMessage("Shadow buff count: " + body.GetBuffCount(BanditSkills.BanditShadowsBuff));
+                    //di.damage = di.damage * (1 + (body.GetBuffCount(BanditShadowsBuff) * 0.15f));
+                }
+            }
+
+            orig.Invoke(self, di);
         }
     }
 
@@ -112,80 +124,89 @@ namespace MoreSkillsPlusPlusOptions.BanditSkills
         })]
     internal class BanditSkillThrowSmokebombModifier : SimpleSkillModifier<ThrowSmokebomb>
     {
+        float baseRadius = 0;
+        float baseDamage = 0;
+
+        public override void OnSkillEnter(ThrowSmokebomb skillState, int level)
+        {
+            base.OnSkillEnter(skillState, level);
+
+            Chat.AddMessage("Smokebombed");
+
+
+            //TODO: Replace this with damage + move speed + radius increase and move that to another mod as a new skill.
+            //for(int i = 0; i < level; i++)
+            //{
+            //    Chat.AddMessage("Applying buff");
+            //    skillState.outer.commonComponents.characterBody.AddBuff(BanditSkills.BanditShadowsBuff);
+            //}
+            //Chat.AddMessage("Shadow buff count: " + skillState.outer.commonComponents.characterBody.GetBuffCount(BanditSkills.BanditShadowsBuff));
+
+            for(int i = 0; i < level; i++)
+            {
+                skillState.outer.commonComponents.characterBody.AddTimedBuff(BanditSkills.BanditSpeedBuff, StealthMode.duration);
+            }
+
+        }
+
         public override void OnSkillExit(ThrowSmokebomb skillState, int level)
         {
-            CharacterBody body = skillState.outer.commonComponents.characterBody;
+            base.OnSkillExit(skillState, level);
 
-            //body.AddTimedBuff(BanditSkills.BanditShadowsBuff, 1.0f);
+            //if(level > 0)
+            //{
+            //    skillState.outer.commonComponents.characterBody.RemoveBuff(BanditSkills.BanditShadowsBuff);
+            //    skillState.outer.commonComponents.characterBody.AddTimedBuff(BanditSkills.BanditShadowsBuff, 0.5f + 0.5f * level);
+            //}
+
+            if(level > 0)
+            {
+                //skillState.outer.commonComponents.characterBody.RemoveBuff(BanditSkills.BanditSpeedBuff);
+            }
         }
 
         public override void OnSkillLeveledUp(int level, CharacterBody characterBody, SkillDef skillDef)
         {
-            characterBody.baseArmor += 1.0f;
-        }
-    }
-
-    [SkillLevelModifier("FireShotgun2", new Type[]
-        {
-        typeof(FireShotgun2)
-        })]
-    internal class BanditSkillShotgunModifier : SimpleSkillModifier<FireShotgun2>
-    {
-        public override void OnSkillEnter(FireShotgun2 skillState, int level)
-        {
-            Chat.AddMessage("Shotgun");
-
-            base.OnSkillEnter(skillState, level);
-
-            skillState.bulletCount = skillState.bulletCount + level;
-            skillState.damageCoefficient = MultScaling(skillState.damageCoefficient, 0.05f, level);
-
-            skillState.minFixedSpreadYaw += level * 0.5f;
-            skillState.maxFixedSpreadYaw += level;
-        }
-    }
-
-    //Allows to level the skill but doesn't hit OnSkillEnter
-    [SkillLevelModifier("Bandit2FireRifle", new Type[]
-        {
-        typeof(Bandit2FireRifle)
-        })]
-    internal class BanditSkillRifleModifier : SimpleSkillModifier<Bandit2FireRifle>
-    {
-        public override void OnSkillEnter(Bandit2FireRifle skillState, int level)
-        {
-            base.OnSkillEnter(skillState, level);
-        }
-    }
-
-
-    //NOT FUNCTIONAL
-    [SkillLevelModifier("Bandit2FirePrimaryBase", new Type[]
-        {
-        typeof(Bandit2FirePrimaryBase)
-        })]
-    internal class BanditSkillPrimaryBaseModifier : SimpleSkillModifier<Bandit2FirePrimaryBase>
-    {
-        public override void OnSkillEnter(Bandit2FirePrimaryBase skillState, int level)
-        {
-            if(skillState is Bandit2FireRifle)
+            if(Mathf.Abs(baseRadius - 0) < 0.1f)
             {
-                Chat.AddMessage("Rifle");
-
-                base.OnSkillEnter(skillState, level);
-
-                Chat.AddMessage("skill damage: " + skillState.damageCoefficient);
-
-
-                skillState.procCoefficient = AdditiveScaling(skillState.procCoefficient, 0.1f, level);
-                skillState.damageCoefficient = MultScaling(skillState.damageCoefficient, 0.2f, level);
-                skillState.spreadBloomValue = skillState.spreadBloomValue * (5 / level + 5);
-
-                Chat.AddMessage("skill damage: " + skillState.damageCoefficient);
+                baseRadius = StealthMode.blastAttackRadius;
+                baseDamage = StealthMode.blastAttackDamageCoefficient;
             }
 
+            StealthMode.blastAttackRadius = MultScaling(baseRadius, 0.1f, level);
+            StealthMode.blastAttackDamageCoefficient = MultScaling(baseDamage, 0.2f, level);
         }
     }
 
+    [SkillLevelModifier("Bandit2.ResetRevolver", new Type[]
+        {
+        typeof(FireSidearmResetRevolver)
+        })]
+    internal class BanditSkillResetRevolverModifier : SimpleSkillModifier<FireSidearmResetRevolver>
+    {
+        public override void OnSkillEnter(FireSidearmResetRevolver skillState, int level)
+        {
+            Chat.AddMessage("Reset Revolver");
 
+            BanditSkills.BanditLightsOutLevel = level;
+
+            base.OnSkillEnter(skillState, level);
+        }
+    }
+
+    [SkillLevelModifier("Bandit2Desperado", new Type[]
+        {
+        typeof(FireSidearmSkullRevolver)
+        })]
+    internal class BanditSkillSkullRevolverModifier : SimpleSkillModifier<FireSidearmSkullRevolver>
+    {
+        public override void OnSkillEnter(FireSidearmSkullRevolver skillState, int level)
+        {
+            Chat.AddMessage("Skull Revolver");
+
+            BanditSkills.BanditDesperadoLevel = level;
+
+            base.OnSkillEnter(skillState, level);
+        }
+    }
 }
